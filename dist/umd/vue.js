@@ -1045,8 +1045,6 @@
   function initAssetRegisters(Vue) {
     ASSETS_TYPE.forEach(function (type) {
       Vue[type] = function (id, definition) {
-        console.log(id, definition);
-
         if (type === 'component') {
           // 注册全局组件
           // 使用 extend 方法，将对象变成构造函数
@@ -1059,6 +1057,16 @@
     });
   }
 
+  function initExtend(Vue) {
+    // 为什么要有子类和父类  new Vue  (Vue 的构造函数)
+    // 创建子类  继承与父类    扩展的时候都扩展到自己的属性上
+    Vue.extend = function (extendOptions) {
+      var Sub = function VueComponent() {};
+
+      return Sub;
+    };
+  }
+
   function initGlobalAPI(Vue) {
     // 整合了所有全局相关的内容
     Vue.options = {};
@@ -1068,7 +1076,9 @@
       Vue.options[type + 's'] = {};
     });
     Vue.options._base = Vue; // _base 是 Vue 的构造函数
+    // 注册 extend 方法
 
+    initExtend(Vue);
     initAssetRegisters(Vue);
   }
 
