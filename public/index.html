@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="app" style="color: red;fontSize:10px;">
+    {{arr}}
+  </div>
+  <script src="/dist/umd/vue.js"> </script>
+  <script>
+    let vm = new Vue({
+      el: '#app',
+      data() {
+        return {
+          arr: [[1,2,3]]
+        }
+      },
+      computed: {},
+    })
+    Vue.component('my-components', {
+      template: '<div>dsaf</div>'
+    })>
+    vm.arr.push(4)
+    vm.arr.push(5)
+    vm.arr.push(6)
+    console.log(vm.$el.innerHTML)
+    vm.$nextTick(() => {
+      console.log(vm.$el.innerHTML)
+    })
+    // setTimeout(() => {
+    //   // vm.age = 2222  // 依赖收集
+    //   // 希望数据变化，可以自动的重新执行渲染 watcher
+    //   // vm._update(vm._render())
+    //   vm.arr[0].push(4,5,6)
+    // }, 1000)
+    // vm._data.arr.push({c: 12})
+  </script>
+</body>
+</html>
