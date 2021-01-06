@@ -236,6 +236,20 @@
   LIFECYCLE_HOOKS.forEach(function (hook) {
     strats[hook] = mergeHook;
   });
+
+  function mergeAssets(parentVal, childVal) {
+    var res = Object.create(parentVal); // res.__proto__ = parentVal
+
+    if (childVal) {
+      for (var key in childVal) {
+        res[key] = childVal[key];
+      }
+    }
+
+    return res;
+  }
+
+  strats.components = mergeAssets;
   function mergeOptions(parent, child) {
     var options = {};
 
@@ -267,6 +281,14 @@
 
     return options;
   }
+  var isReservedTag = function isReservedTag(tagName) {
+    var str = 'p,div,span,input,button';
+    var obj = {};
+    str.split(',').forEach(function (tag) {
+      obj[tag] = true;
+    });
+    return obj[tagName];
+  };
 
   //  要重写数组的那些方法，7 个  push shift unshift pop reverse sort splice 会导致数组本身发生变化
   // slice() 
@@ -838,19 +860,38 @@
 
   function patch(oldVnode, vnode) {
     // 1. 判断是更新还是要渲染
-    var isRealElement = oldVnode.nodeType;
+    if (!oldVnode) {
+      // 这个是组件的挂载  vm.$mount()
+      return createElm(vnode);
+    } else {
+      var isRealElement = oldVnode.nodeType;
 
-    if (isRealElement) {
-      var oldElm = oldVnode; // div  id= app
+      if (isRealElement) {
+        var oldElm = oldVnode; // div  id= app
 
-      var parentElm = oldElm.parentNode; // body
+        var parentElm = oldElm.parentNode; // body
 
-      var el = createElm(vnode);
-      parentElm.insertBefore(el, oldElm.nextSibling);
-      parentElm.removeChild(oldElm);
-      return el;
-    } // 递归创建真实节点  替换掉老的节点 
+        var el = createElm(vnode);
+        parentElm.insertBefore(el, oldElm.nextSibling);
+        parentElm.removeChild(oldElm);
+        return el;
+      } // 递归创建真实节点  替换掉老的节点 
 
+    }
+  }
+
+  function createComponent(vnode) {
+    // 需要创建组件的实例
+    var i = vnode.data;
+
+    if ((i = i.hook) && (i = i.init)) {
+      i(vnode);
+    } // 执行完毕后
+
+
+    if (vnode.componentInstance) {
+      return true;
+    }
   }
 
   function createElm(vnode) {
@@ -862,6 +903,13 @@
         text = vnode.text; // 是标签就创建标签
 
     if (typeof tag === 'string') {
+      // 不是 tag 是字符串的，就是普通的 html， 还有可能是组件
+      // 实例化组件
+      if (createComponent(vnode)) {
+        // 这里应该返回真是的元素
+        return vnode.componentInstance.$el;
+      }
+
       vnode.el = document.createElement(tag);
       updateProperties(vnode);
       children.forEach(function (child) {
@@ -980,31 +1028,59 @@
     Vue.prototype.$nextTick = nextTick;
   }
 
-  function createElement(tag) {
-    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  function createElement(vm, tag) {
+    var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var key = data.key;
 
     if (key) {
       delete data.key;
+    } // 以前标识的是标签， 现在是组件 名字  上下文
+
+
+    for (var _len = arguments.length, children = new Array(_len > 3 ? _len - 3 : 0), _key = 3; _key < _len; _key++) {
+      children[_key - 3] = arguments[_key];
     }
 
-    for (var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-      children[_key - 2] = arguments[_key];
+    if (isReservedTag(tag)) {
+      return vnode(tag, data, key, children, undefined);
+    } else {
+      // 组件
+      var Ctor = vm.$options.components[tag];
+      return createComponent$1(vm, tag, data, key, children, Ctor);
     }
-
-    return vnode(tag, data, key, children, undefined);
   }
-  function createTextNode(text) {
+
+  function createComponent$1(vm, tag, data, key, children, Ctor) {
+    if (isObject(Ctor)) {
+      Ctor = vm.$options._base.extend(Ctor);
+    }
+
+    data.hook = {
+      init: function init(vnode) {
+        var child = vnode.componentInstance = new Ctor({
+          _isComponent: true
+        });
+        child.$mount();
+      }
+    };
+    return vnode("vue-component-".concat(Ctor.cid, "-").concat(tag), data, key, undefined, undefined, {
+      Ctor: Ctor,
+      children: children
+    });
+  }
+
+  function createTextNode(vm, text) {
     return vnode(undefined, undefined, undefined, undefined, text);
   }
 
-  function vnode(tag, data, key, children, text) {
+  function vnode(tag, data, key, children, text, componentOptions) {
     return {
       tag: tag,
       data: data,
       key: key,
       children: children,
-      text: text
+      text: text,
+      componentOptions: componentOptions
     };
   } // 虚拟节点，就是通过_c _v 实现用对象来描述 dom 操作 （对象）
 
@@ -1013,11 +1089,11 @@
     //  _v 创建文本的虚拟节点
     //  _s JSON.stringify
     Vue.prototype._c = function () {
-      return createElement.apply(void 0, arguments); // tag, data, children1, children2
+      return createElement.apply(void 0, [this].concat(Array.prototype.slice.call(arguments))); // tag, data, children1, children2
     };
 
     Vue.prototype._v = function (text) {
-      return createTextNode(text);
+      return createTextNode(this, text);
     };
 
     Vue.prototype._s = function (val) {
@@ -1060,11 +1136,15 @@
   function initExtend(Vue) {
     // 为什么要有子类和父类  new Vue  (Vue 的构造函数)
     // 创建子类  继承与父类    扩展的时候都扩展到自己的属性上
+    // 组件可能创建多个，需要一个唯一标识
+    var cid = 0;
+
     Vue.extend = function (extendOptions) {
       var Sub = function VueComponent(options) {
         this._init(options);
       };
 
+      Sub.cid = cid++;
       Sub.prototype = Object.create(this.prototype);
       Sub.prototype.constructor = Sub;
       Sub.options = mergeOptions(this.options, extendOptions); // minin

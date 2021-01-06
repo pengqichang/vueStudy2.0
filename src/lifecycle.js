@@ -13,7 +13,6 @@ export function lifecycleMixin(Vue) {
 export function mountComponent(vm, el) {
   const options = vm.$options;
   vm.$el = el;
-
   // Watcher 就是用来渲染的
   // vm._render 通过解析的 render 方法，渲染出虚拟 dom
   // vm._update 通过虚拟 dom，创建真实 dom

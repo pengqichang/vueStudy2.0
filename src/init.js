@@ -37,7 +37,6 @@ export function initMixin(Vue){
     el = document.querySelector(el);
     // 默认先会查找有没有 render 方法，没有 render 会采用 template ， template 也灭有，就会采用 el 中的内容
 
-
     if (!options.render) {
       // 对模板进行编译
       let template = options.template

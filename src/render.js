@@ -8,11 +8,11 @@ export function renderMinin(Vue) {
   //  _s JSON.stringify
 
   Vue.prototype._c = function () {
-    return createElement(...arguments)   // tag, data, children1, children2
+    return createElement(this, ...arguments)   // tag, data, children1, children2
   }
 
   Vue.prototype._v = function (text) {
-    return createTextNode(text)
+    return createTextNode(this, text)
   }
 
   Vue.prototype._s = function (val) {

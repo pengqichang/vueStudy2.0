@@ -7,7 +7,7 @@
 </head>
 <body>
   <div id="app" style="color: red;fontSize:10px;">
-    {{arr}}
+    <my-components></my-components>
   </div>
   <script src="/dist/umd/vue.js"> </script>
   <script>
@@ -18,18 +18,24 @@
           arr: [[1,2,3]]
         }
       },
+      components: {
+        'my-components': {
+          template: '<div>你好</div>'
+        }
+      },
       computed: {},
     })
-    Vue.component('my-components', {
-      template: '<div>dsaf</div>'
-    })>
-    vm.arr.push(4)
-    vm.arr.push(5)
-    vm.arr.push(6)
-    console.log(vm.$el.innerHTML)
-    vm.$nextTick(() => {
-      console.log(vm.$el.innerHTML)
-    })
+    // Vue.component('my-components', {
+    //   template: '<div>dsaf</div>'
+    // })
+    // vm.arr.push(4)
+    // vm.arr.push(5)
+    // vm.arr.push(6)
+    // console.log(vm.$el.innerHTML)
+    // vm.$nextTick(() => {
+    //   console.log(vm.$el.innerHTML)
+    // })
+    // console.log(vm)
     // setTimeout(() => {
     //   // vm.age = 2222  // 依赖收集
     //   // 希望数据变化，可以自动的重新执行渲染 watcher
