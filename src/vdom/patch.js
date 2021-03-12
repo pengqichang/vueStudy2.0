@@ -197,7 +197,7 @@ function updateProperties(vnode, oldProps = {}) {
   let newProps = vnode.data || {};
 
   let el = vnode.el;
-  // 如果老的属性中有，新的属性中没有，要再真是的 dom 中删除此属性
+  // 如果老的属性中有，新的属性中没有，要再真实的 dom 中删除此属性
 
   let newStyle = newProps.style || {}
   let oldStyle = oldProps.style || {}

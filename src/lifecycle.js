@@ -4,8 +4,19 @@ import {patch} from './vdom/patch'
 export function lifecycleMixin(Vue) {
   Vue.prototype._update = function (vnode) {
     const vm  = this
-    // 通过虚拟节点，渲染真实 dom
-    vm.$el = patch(vm.$el, vnode)  // 需要用虚拟节点创建出真实节点，替换掉真实的$el
+
+    const prevVnode = vm._vnode;
+    // 第一次默认  不需要 diff 算法
+
+    vm._vnode = vnode; // 真是渲染的内容
+
+    if(!prevVnode) { // 如果第一次渲染，prevVnode不存在
+        // 通过虚拟节点，渲染真实 dom
+      vm.$el = patch(vm.$el, vnode)  // 需要用虚拟节点创建出真实节点，替换掉真实的$el
+    } else {
+      vm.$el = patch(prevVnode, vnode);
+    }
+
   }
 }
 
